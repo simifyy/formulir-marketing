@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Select from 'react-select';
+import imageCompression from 'browser-image-compression'; 
 import './App.css'; 
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
     fotoKTP: '',
     alamat: '',
     wa: '',
+    // Step 2
     namaUsaha: '',
     alamatUsaha: '',
     produk: '',
@@ -49,14 +51,30 @@ function App() {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     const name = e.target.name;
+
     if (file) {
-      if (file.size > 2 * 1024 * 1024) return alert("File terlalu besar (Max 2MB)");
-      const reader = new FileReader();
-      reader.onloadend = () => setFormData(prev => ({ ...prev, [name]: reader.result }));
-      reader.readAsDataURL(file);
+      const options = {
+        maxSizeMB: 0.1,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+        initialQuality: 0.7
+      };
+
+      try {
+        const compressedFile = await imageCompression(file, options);
+        
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        reader.onloadend = () => {
+          setFormData(prev => ({ ...prev, [name]: reader.result }));
+        };
+      } catch (error) {
+        console.error("Gagal kompresi:", error);
+        alert("Gagal mengompres gambar. Gambar mungkin terlalu besar.");
+      }
     }
   };
 
@@ -167,6 +185,7 @@ function App() {
             <div className="form-group">
               <label>Unggah Foto KTP <span>*</span></label>
               <input className="input-field" type="file" name="fotoKTP" accept="image/*" onChange={handleFileChange} required />
+              <small style={{color:'#666', fontSize:'11px'}}>Foto akan otomatis diperkecil agar pengiriman cepat.</small>
             </div>
 
             <div className="form-group">
@@ -234,8 +253,16 @@ function App() {
           </>
         )}
 
-        {status === 'loading' && <p className="status-msg">⏳ Sedang mengirim data...</p>}
-        {status === 'error' && <p className="status-msg" style={{color:'red'}}>❌ Gagal mengirim. Cek internet.</p>}
+        {status === 'loading' && (
+          <div style={{marginTop:'20px', padding:'15px', backgroundColor:'#e0f2f1', borderRadius:'8px', color:'#00695c', textAlign:'center'}}>
+            <p style={{margin:0, fontWeight:'bold', fontSize:'18px'}}>🚀 Sedang Mengirim Data...</p>
+            <p style={{margin:'5px 0 0 0', fontSize:'13px'}}>Proses lebih cepat. Mohon tunggu sebentar.</p>
+          </div>
+        )}
+        
+        {status === 'error' && (
+          <p className="status-msg" style={{color:'red'}}>❌ Gagal mengirim. Pastikan internet Anda stabil.</p>
+        )}
       </form>
     </div>
   );
