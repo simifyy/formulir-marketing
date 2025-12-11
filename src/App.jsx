@@ -4,7 +4,6 @@ import imageCompression from 'browser-image-compression';
 import './App.css'; 
 
 function App() {
-  // GANTI URL INI DENGAN URL SCRIPT TERBARU KAMU
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0sw-adlPYohzgIOmJIygHDyeTI8x7QR9EmdVTniQTT2btlIPdP9AQh0ehMfSKLVHp/exec";
 
   const [step, setStep] = useState(1);
@@ -16,12 +15,11 @@ function App() {
     { value: 'EVAN', label: 'EVAN (003)' },
   ];
 
-  // Style dropdown agar responsive
   const selectStyles = {
     control: base => ({ 
       ...base, 
       borderColor: '#aaa', 
-      padding: '8px', // Padding lebih besar
+      padding: '8px',
       borderRadius: '8px',
       fontSize: '16px' 
     }),
@@ -31,7 +29,7 @@ function App() {
       ...base,
       backgroundColor: state.isSelected ? '#2e7d32' : state.isFocused ? '#c8e6c9' : 'white',
       color: state.isSelected ? 'white' : '#000',
-      padding: '12px' // Opsi lebih mudah disentuh
+      padding: '12px'
     })
   };
 
@@ -44,7 +42,6 @@ function App() {
     fotoKTP: '',
     alamat: '',
     wa: '',
-    // Step 2
     namaUsaha: '',
     alamatUsaha: '',
     produk: '',
@@ -254,7 +251,6 @@ function App() {
               <input className="input-field" type="file" name="fotoPendamping" accept="image/*" onChange={handleFileChange} />
             </div>
 
-            {/* Container Tombol agar rapi di HP */}
             <div className="btn-container">
               <button type="button" className="btn-submit btn-back" onClick={() => setStep(1)}>👈 KEMBALI</button>
               <button type="submit" className="btn-submit" style={{marginTop:0}}>KIRIM DATA ✅</button>
