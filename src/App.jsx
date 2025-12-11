@@ -4,6 +4,7 @@ import imageCompression from 'browser-image-compression';
 import './App.css'; 
 
 function App() {
+  // GANTI URL INI DENGAN URL SCRIPT TERBARU KAMU
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0sw-adlPYohzgIOmJIygHDyeTI8x7QR9EmdVTniQTT2btlIPdP9AQh0ehMfSKLVHp/exec";
 
   const [step, setStep] = useState(1);
@@ -15,14 +16,22 @@ function App() {
     { value: 'EVAN', label: 'EVAN (003)' },
   ];
 
+  // Style dropdown agar responsive
   const selectStyles = {
-    control: base => ({ ...base, borderColor: '#aaa', padding: '5px' }),
+    control: base => ({ 
+      ...base, 
+      borderColor: '#aaa', 
+      padding: '8px', // Padding lebih besar
+      borderRadius: '8px',
+      fontSize: '16px' 
+    }),
     singleValue: base => ({ ...base, color: '#000' }),
     input: base => ({ ...base, color: '#000' }),
     option: (base, state) => ({
       ...base,
       backgroundColor: state.isSelected ? '#2e7d32' : state.isFocused ? '#c8e6c9' : 'white',
-      color: state.isSelected ? 'white' : '#000'
+      color: state.isSelected ? 'white' : '#000',
+      padding: '12px' // Opsi lebih mudah disentuh
     })
   };
 
@@ -57,15 +66,14 @@ function App() {
 
     if (file) {
       const options = {
-        maxSizeMB: 0.1,
-        maxWidthOrHeight: 800,
+        maxSizeMB: 0.1,        
+        maxWidthOrHeight: 800, 
         useWebWorker: true,
-        initialQuality: 0.7
+        initialQuality: 0.7   
       };
 
       try {
         const compressedFile = await imageCompression(file, options);
-        
         const reader = new FileReader();
         reader.readAsDataURL(compressedFile);
         reader.onloadend = () => {
@@ -73,7 +81,7 @@ function App() {
         };
       } catch (error) {
         console.error("Gagal kompresi:", error);
-        alert("Gagal mengompres gambar. Gambar mungkin terlalu besar.");
+        alert("Gagal mengompres gambar.");
       }
     }
   };
@@ -125,10 +133,10 @@ function App() {
 
   if (status === 'success') {
     return (
-      <div className="container" style={{textAlign:'center'}}>
-        <h1 style={{color:'green'}}>✅ Terima Kasih!</h1>
-        <p>Data Anda berhasil dikirim.</p>
-        <button className="btn-submit" onClick={() => window.location.reload()}>Isi Lagi</button>
+      <div className="container" style={{textAlign:'center', padding: '40px 20px'}}>
+        <h1 style={{color:'green', fontSize: '28px'}}>✅ Terima Kasih!</h1>
+        <p style={{fontSize: '16px', lineHeight: '1.6'}}>Data pendaftaran Anda telah berhasil dikirim ke sistem kami.</p>
+        <button className="btn-submit" onClick={() => window.location.reload()} style={{marginTop:'30px'}}>Isi Formulir Baru</button>
       </div>
     );
   }
@@ -163,7 +171,7 @@ function App() {
               </div>
               <label className="checkbox-wrapper">
                 <input type="checkbox" name="persetujuan" onChange={handleChange} />
-                Saya Setuju dan Paham
+                <span>Saya Setuju dan Paham</span>
               </label>
             </div>
 
@@ -185,7 +193,7 @@ function App() {
             <div className="form-group">
               <label>Unggah Foto KTP <span>*</span></label>
               <input className="input-field" type="file" name="fotoKTP" accept="image/*" onChange={handleFileChange} required />
-              <small style={{color:'#666', fontSize:'11px'}}>Foto akan otomatis diperkecil agar pengiriman cepat.</small>
+              <small style={{color:'#666', fontSize:'12px', display:'block', marginTop:'5px'}}>Foto otomatis diperkecil agar cepat.</small>
             </div>
 
             <div className="form-group">
@@ -246,22 +254,23 @@ function App() {
               <input className="input-field" type="file" name="fotoPendamping" accept="image/*" onChange={handleFileChange} />
             </div>
 
-            <div style={{display:'flex', marginTop:'20px'}}>
+            {/* Container Tombol agar rapi di HP */}
+            <div className="btn-container">
               <button type="button" className="btn-submit btn-back" onClick={() => setStep(1)}>👈 KEMBALI</button>
-              <button type="submit" className="btn-submit">KIRIM FORMULIR ✅</button>
+              <button type="submit" className="btn-submit" style={{marginTop:0}}>KIRIM DATA ✅</button>
             </div>
           </>
         )}
 
         {status === 'loading' && (
           <div style={{marginTop:'20px', padding:'15px', backgroundColor:'#e0f2f1', borderRadius:'8px', color:'#00695c', textAlign:'center'}}>
-            <p style={{margin:0, fontWeight:'bold', fontSize:'18px'}}>🚀 Sedang Mengirim Data...</p>
-            <p style={{margin:'5px 0 0 0', fontSize:'13px'}}>Proses lebih cepat. Mohon tunggu sebentar.</p>
+            <p style={{margin:0, fontWeight:'bold', fontSize:'16px'}}>🚀 Sedang Mengirim Data...</p>
+            <p style={{margin:'5px 0 0 0', fontSize:'13px'}}>Mohon tunggu sebentar.</p>
           </div>
         )}
         
         {status === 'error' && (
-          <p className="status-msg" style={{color:'red'}}>❌ Gagal mengirim. Pastikan internet Anda stabil.</p>
+          <p className="status-msg" style={{color:'red', fontWeight:'bold'}}>❌ Gagal mengirim. Cek koneksi internet Anda.</p>
         )}
       </form>
     </div>

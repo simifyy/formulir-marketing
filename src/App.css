@@ -1,53 +1,95 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
+/* --- RESET & BODY --- */
 body {
   background-color: #e8f5e9;
   font-family: 'Poppins', sans-serif;
   color: #000;
   margin: 0;
+  padding: 0;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  padding: 20px;
+  /* Align items flex-start penting agar bisa discroll di HP */
+  align-items: flex-start; 
 }
 
+/* --- CONTAINER UTAMA --- */
 .container {
   width: 100%;
-  max-width: 600px;
+  /* Max width 600px agar di laptop tidak terlalu lebar */
+  max-width: 600px; 
+  /* Margin auto agar tengah, margin atas bawah ada jarak */
+  margin: 20px auto; 
   background: #ffffff;
   padding: 30px;
   border-radius: 15px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.1);
   border-top: 6px solid #2e7d32;
+  box-sizing: border-box; /* Penting agar padding tidak melebarkan kotak */
 }
 
-h1, h2, h3 { text-align: center; color: #1b5e20; margin-top: 0; }
-.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 25px; }
+/* --- TYPOGRAPHY --- */
+h1 {
+  text-align: center;
+  color: #1b5e20;
+  margin-top: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
 
+h2 {
+  text-align: center;
+  color: #f57c00;
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 25px;
+}
+
+/* --- FORM ELEMENTS --- */
 .section-header {
   background-color: #f1f8e9;
   color: #33691e;
-  padding: 10px;
+  padding: 12px;
   font-weight: bold;
   border-left: 5px solid #558b2f;
   margin: 25px 0 15px 0;
-  font-size: 16px;
+  font-size: 15px;
   text-transform: uppercase;
+  border-radius: 0 4px 4px 0;
 }
 
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #212121; }
-.form-group label span { color: red; }
+.form-group {
+  margin-bottom: 20px;
+}
 
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #212121;
+  font-size: 14px;
+}
+
+.form-group label span {
+  color: red;
+}
+
+/* Input agar enak diketik di HP */
 .input-field {
   width: 100%;
-  padding: 12px;
+  padding: 14px; /* Padding lebih besar untuk jari */
   border: 1px solid #aaa;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 8px;
+  font-size: 16px; /* Font 16px mencegah zoom otomatis di iPhone */
   box-sizing: border-box;
-  color: #000000 !important;
+  color: #000 !important;
   background-color: #fff;
 }
 
@@ -57,6 +99,14 @@ h1, h2, h3 { text-align: center; color: #1b5e20; margin-top: 0; }
   box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2);
 }
 
+/* File Input */
+input[type="file"] {
+  padding: 10px;
+  background: #f9f9f9;
+  border: 1px dashed #ccc;
+}
+
+/* --- PERNYATAAN --- */
 .statement-box {
   background: #fff3e0;
   padding: 15px;
@@ -65,39 +115,98 @@ h1, h2, h3 { text-align: center; color: #1b5e20; margin-top: 0; }
   font-size: 13px;
   line-height: 1.5;
   color: #000;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
-.statement-box p { margin: 0 0 8px 0; }
+
+.statement-box p {
+  margin: 0 0 10px 0;
+}
 
 .checkbox-wrapper {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: center; /* Vertikal center */
+  gap: 12px;
   font-weight: bold;
   color: #1b5e20;
   cursor: pointer;
+  padding: 10px;
+  background: #f1f8e9;
+  border-radius: 8px;
 }
-.checkbox-wrapper input { width: 20px; height: 20px; accent-color: #2e7d32; }
 
+.checkbox-wrapper input {
+  width: 24px; /* Checkbox lebih besar */
+  height: 24px;
+  accent-color: #2e7d32;
+  flex-shrink: 0; /* Agar checkbox tidak gepeng */
+}
+
+/* --- TOMBOL --- */
 .btn-submit, .btn-next {
   width: 100%;
-  padding: 15px;
+  padding: 16px;
   background-color: #2e7d32;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  margin-top: 20px;
+  margin-top: 25px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: background 0.2s;
 }
-.btn-submit:hover { background-color: #1b5e20; }
+
+.btn-submit:active, .btn-next:active {
+  transform: scale(0.98); /* Efek tekan */
+}
+
 .btn-back {
   background-color: #cfd8dc;
   color: #37474f;
   margin-right: 10px;
   width: auto;
-  padding: 15px 25px;
+  flex: 1; /* Agar tombol berbagi ruang sama rata */
 }
 
-.status-msg { text-align: center; margin-top: 15px; font-weight: bold; }
+.btn-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.status-msg {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+/* --- KHUSUS MOBILE (LAYAR KECIL) --- */
+@media (max-width: 480px) {
+  body {
+    background-color: #fff; /* Di HP background putih aja biar bersih */
+    padding: 0;
+  }
+
+  .container {
+    margin: 0;
+    border-radius: 0; /* Kotak penuh di HP */
+    border-top: none;
+    padding: 20px;
+    box-shadow: none;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .input-field {
+    padding: 12px;
+    font-size: 16px; 
+  }
+
+  .btn-submit, .btn-next, .btn-back {
+    padding: 14px;
+    font-size: 15px;
+  }
+}
