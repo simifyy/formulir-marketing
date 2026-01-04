@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import imageCompression from 'browser-image-compression'; 
 import './App.css'; 
@@ -6,8 +6,41 @@ import './App.css';
 function App() {
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0sw-adlPYohzgIOmJIygHDyeTI8x7QR9EmdVTniQTT2btlIPdP9AQh0ehMfSKLVHp/exec";
 
-  const [step, setStep] = useState(1);
+  // --- 1. INISIALISASI STATE DENGAN LOCAL STORAGE ---
+  const [step, setStep] = useState(() => {
+    const savedStep = localStorage.getItem('halalFormStep');
+    return savedStep ? parseInt(savedStep) : 1;
+  });
+
   const [status, setStatus] = useState('');
+
+  const [formData, setFormData] = useState(() => {
+    const savedData = localStorage.getItem('halalFormData');
+    return savedData ? JSON.parse(savedData) : {
+      marketing: null,
+      persetujuan: false,
+      email: '',
+      nama: '',
+      nik: '',
+      fotoKTP: '',
+      alamat: '',
+      wa: '',
+      namaUsaha: '',
+      alamatUsaha: '',
+      produk: '',
+      fotoProduk: [], 
+      bahan: '',
+      alur: '',
+      nib: '',
+      fotoPendamping: ''
+    };
+  });
+
+  // --- 2. AUTO-SAVE KE LOCAL STORAGE ---
+  useEffect(() => {
+    localStorage.setItem('halalFormData', JSON.stringify(formData));
+    localStorage.setItem('halalFormStep', step.toString());
+  }, [formData, step]);
 
   const optionsMarketing = [
     { value: 'AJI', label: 'AJI (001)' },
@@ -18,39 +51,26 @@ function App() {
   const selectStyles = {
     control: base => ({ 
       ...base, 
-      borderColor: '#aaa', 
-      padding: '8px',
-      borderRadius: '8px',
-      fontSize: '16px' 
+      backgroundColor: '#ffffff', 
+      borderColor: '#ccc',
+      padding: '6px', 
+      borderRadius: '6px',
+      fontSize: '16px',
+      boxShadow: 'none',
+      color: '#000',
+      '&:hover': { borderColor: '#2e7d32' }
     }),
-    singleValue: base => ({ ...base, color: '#000' }),
-    input: base => ({ ...base, color: '#000' }),
+    singleValue: base => ({ ...base, color: '#000' }), 
+    input: base => ({ ...base, color: '#000' }),       
+    placeholder: base => ({ ...base, color: '#888' }), 
     option: (base, state) => ({
       ...base,
-      backgroundColor: state.isSelected ? '#2e7d32' : state.isFocused ? '#c8e6c9' : 'white',
+      backgroundColor: state.isSelected ? '#2e7d32' : state.isFocused ? '#e8f5e9' : 'white',
       color: state.isSelected ? 'white' : '#000',
-      padding: '12px'
+      padding: '12px',
+      cursor: 'pointer'
     })
   };
-
-  const [formData, setFormData] = useState({
-    marketing: null,
-    persetujuan: false,
-    email: '',
-    nama: '',
-    nik: '',
-    fotoKTP: '',
-    alamat: '',
-    wa: '',
-    namaUsaha: '',
-    alamatUsaha: '',
-    produk: '',
-    fotoProduk: '',
-    bahan: '',
-    alur: '',
-    nib: '',
-    fotoPendamping: ''
-  });
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -58,10 +78,10 @@ function App() {
   };
 
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
+    const files = e.target.files;
     const name = e.target.name;
-
-    if (file) {
+    
+    if (files && files.length > 0) {
       const options = {
         maxSizeMB: 0.1,        
         maxWidthOrHeight: 800, 
@@ -70,24 +90,40 @@ function App() {
       };
 
       try {
-        const compressedFile = await imageCompression(file, options);
-        const reader = new FileReader();
-        reader.readAsDataURL(compressedFile);
-        reader.onloadend = () => {
-          setFormData(prev => ({ ...prev, [name]: reader.result }));
-        };
+        if (name === 'fotoProduk') {
+          const compressedFilesPromises = Array.from(files).map(async (file) => {
+            const compressed = await imageCompression(file, options);
+            return new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.readAsDataURL(compressed);
+              reader.onloadend = () => resolve(reader.result);
+            });
+          });
+
+          const base64Array = await Promise.all(compressedFilesPromises);
+          setFormData(prev => ({ ...prev, [name]: base64Array })); 
+        } else {
+          const file = files[0];
+          const compressedFile = await imageCompression(file, options);
+          const reader = new FileReader();
+          reader.readAsDataURL(compressedFile);
+          reader.onloadend = () => {
+            setFormData(prev => ({ ...prev, [name]: reader.result }));
+          };
+        }
       } catch (error) {
         console.error("Gagal kompresi:", error);
-        alert("Gagal mengompres gambar.");
+        alert("Gagal memproses gambar. Coba lagi.");
       }
     }
   };
 
   const handleNext = () => {
-    if (!formData.marketing) return alert("Pilih Pendamping dulu di bagian atas!");
-    if (!formData.persetujuan) return alert("Anda harus mencentang persetujuan!");
-    if (!formData.nama || !formData.nik || !formData.fotoKTP || !formData.alamat || !formData.wa) {
-      return alert("Mohon lengkapi semua data wajib (tanda merah *)");
+    if (!formData.marketing) return alert("⚠️ Mohon pilih Pendamping dulu.");
+    if (!formData.persetujuan) return alert("⚠️ Anda harus mencentang persetujuan!");
+    
+    if (!formData.nama || !formData.nik || (!formData.fotoKTP && !localStorage.getItem('halalFormData')) || !formData.alamat || !formData.wa || !formData.email) {
+      if (!formData.fotoKTP) return alert("⚠️ Mohon lengkapi semua kolom bertanda bintang (*).");
     }
     setStep(2);
     window.scrollTo(0, 0);
@@ -95,16 +131,17 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.namaUsaha || !formData.produk || !formData.fotoProduk || !formData.bahan || !formData.alur) {
-      return alert("Lengkapi data usaha!");
+    
+    if (!formData.namaUsaha || !formData.produk || (!formData.fotoProduk || formData.fotoProduk.length === 0) || !formData.bahan || !formData.alur || !formData.nib) {
+      return alert("⚠️ Lengkapi data usaha Anda! (Termasuk NIB, ketik 'Tidak Punya' jika kosong)");
     }
 
-    setStatus('loading');
+    setStatus('loading'); 
 
     const dataToSend = {
-      marketing: formData.marketing.value,
+      marketing: formData.marketing ? formData.marketing.value : '',
       persetujuan: "SETUJU",
-      email: formData.email || "Tidak Memiliki Email",
+      email: formData.email,
       nama: formData.nama,
       nik: formData.nik,
       alamat: formData.alamat,
@@ -116,160 +153,194 @@ function App() {
       fotoProduk: formData.fotoProduk,
       bahan: formData.bahan,
       alur: formData.alur,
-      nib: formData.nib || "Belum Memiliki NIB",
+      nib: formData.nib,
       fotoPendamping: formData.fotoPendamping
     };
 
     try {
       await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dataToSend) });
+      
       setStatus('success');
+      localStorage.removeItem('halalFormData');
+      localStorage.removeItem('halalFormStep');
+      
     } catch (error) {
       setStatus('error');
     }
   };
 
+  const FileIndicator = ({ hasData }) => {
+    if (!hasData || hasData.length === 0) return null;
+    return (
+      <div style={{marginTop:'5px', fontSize:'13px', color:'#2e7d32', fontWeight:'bold', display:'flex', alignItems:'center', gap:'5px'}}>
+        <span>✅ Foto tersimpan di memori.</span>
+        <span style={{fontSize:'11px', fontWeight:'normal', color:'#666'}}>(Klik 'Pilih File' jika ingin mengubah)</span>
+      </div>
+    );
+  };
+
   if (status === 'success') {
     return (
-      <div className="container" style={{textAlign:'center', padding: '40px 20px'}}>
-        <h1 style={{color:'green', fontSize: '28px'}}>✅ Terima Kasih!</h1>
-        <p style={{fontSize: '16px', lineHeight: '1.6'}}>Data pendaftaran Anda telah berhasil dikirim ke sistem kami.</p>
-        <button className="btn-submit" onClick={() => window.location.reload()} style={{marginTop:'30px'}}>Isi Formulir Baru</button>
+      <div className="container" style={{textAlign:'center', padding: '60px 20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center'}}>
+        <div style={{fontSize: '70px', marginBottom:'20px'}}>🎉</div>
+        <h1 style={{fontSize: '32px', marginBottom:'10px'}}>Berhasil Terkirim!</h1>
+        <p style={{fontSize: '16px', color:'#666', maxWidth:'400px', lineHeight:'1.6'}}>
+          Terima kasih. Data pendaftaran sertifikasi halal Anda telah kami terima.
+        </p>
+        <button className="btn-submit" onClick={() => window.location.reload()} style={{marginTop:'40px', width:'auto', paddingLeft:'40px', paddingRight:'40px'}}>
+          Isi Formulir Baru
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="container">
-      <h1>FORMULIR PENDAFTARAN</h1>
-      <h2 style={{color: '#f57c00'}}>SERTIFIKASI HALAL</h2>
-      <p className="subtitle">Isi data dengan benar dan jujur.</p>
+    <> 
+      {status === 'loading' && (
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+          <p className="loading-title">Sedang Mengirim Data...</p>
+          <p className="loading-text">Mohon jangan tutup halaman ini.</p>
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit}>
+      <div className="container">
+        <h1>FORMULIR PENDAFTARAN SERTIFIKASI HALAL (SELF DECLARE) </h1>
+        <p className="subtitle">Isi data dengan benar dan jujur.</p>
 
-        {step === 1 && (
-          <>
-            <div className="form-group" style={{borderBottom:'2px solid #ddd', paddingBottom:'20px'}}>
-              <label>Pilih Pendamping (Marketing) <span>*</span></label>
-              <Select 
-                options={optionsMarketing} 
-                onChange={(opt) => setFormData({...formData, marketing: opt})} 
-                placeholder="Pilih Nama..."
-                styles={selectStyles}
-              />
-            </div>
-
-            <div className="section-header">INFORMASI PRIBADI</div>
-
-            <div className="form-group">
-              <label>Pernyataan Pelaku Usaha:</label>
-              <div className="statement-box">
-                <p>1. Saya selaku pelaku usaha secara sadar memberikan data yang sesuai dan benar...</p>
-                <p>2. Saya mengakui bahwa bahan-bahan yang digunakan adalah halal...</p>
-              </div>
-              <label className="checkbox-wrapper">
-                <input type="checkbox" name="persetujuan" onChange={handleChange} />
-                <span>Saya Setuju dan Paham</span>
-              </label>
-            </div>
-
-            <div className="form-group">
-              <label>Email Aktif</label>
-              <input className="input-field" type="text" name="email" onChange={handleChange} placeholder="Ketik 'Tidak Memiliki Email' jika kosong" />
-            </div>
-
-            <div className="form-group">
-              <label>Nama (Sesuai KTP) <span>*</span></label>
-              <input className="input-field" type="text" name="nama" onChange={handleChange} required />
-            </div>
-
-            <div className="form-group">
-              <label>NIK (Sesuai KTP) <span>*</span></label>
-              <input className="input-field" type="number" name="nik" onChange={handleChange} required />
-            </div>
-
-            <div className="form-group">
-              <label>Unggah Foto KTP <span>*</span></label>
-              <input className="input-field" type="file" name="fotoKTP" accept="image/*" onChange={handleFileChange} required />
-              <small style={{color:'#666', fontSize:'12px', display:'block', marginTop:'5px'}}>Foto otomatis diperkecil agar cepat.</small>
-            </div>
-
-            <div className="form-group">
-              <label>Alamat Lengkap (Sesuai KTP) <span>*</span></label>
-              <textarea className="input-field" name="alamat" rows="3" onChange={handleChange} required></textarea>
-            </div>
-
-            <div className="form-group">
-              <label>Nomor WA Aktif <span>*</span></label>
-              <input className="input-field" type="number" name="wa" onChange={handleChange} required />
-            </div>
-
-            <button type="button" className="btn-next" onClick={handleNext}>LANJUT KE INFO USAHA 👉</button>
-          </>
-        )}
-
-        {step === 2 && (
-          <>
-            <div className="section-header">INFORMASI USAHA & PRODUK</div>
-
-            <div className="form-group">
-              <label>Nama Usaha Anda <span>*</span></label>
-              <input className="input-field" type="text" name="namaUsaha" onChange={handleChange} required />
-            </div>
-
-            <div className="form-group">
-              <label>Alamat Lokasi Usaha <span>*</span></label>
-              <textarea className="input-field" name="alamatUsaha" rows="3" onChange={handleChange} required></textarea>
-            </div>
-
-            <div className="form-group">
-              <label>Produk yang Dijual <span>*</span></label>
-              <input className="input-field" type="text" name="produk" onChange={handleChange} required />
-            </div>
-
-            <div className="form-group">
-              <label>Foto Produk <span>*</span></label>
-              <input className="input-field" type="file" name="fotoProduk" accept="image/*" onChange={handleFileChange} required />
-            </div>
-
-            <div className="form-group">
-              <label>Bahan & Merek (Contoh: Gula: Gulaku, dst) <span>*</span></label>
-              <textarea className="input-field" name="bahan" rows="5" onChange={handleChange} required></textarea>
-            </div>
-
-            <div className="form-group">
-              <label>Alur Proses Pembuatan <span>*</span></label>
-              <textarea className="input-field" name="alur" rows="4" onChange={handleChange} required></textarea>
-            </div>
-
-            <div className="form-group">
-              <label>No NIB</label>
-              <input className="input-field" type="text" name="nib" placeholder="Isi 'Belum Memiliki NIB' jika kosong" onChange={handleChange} />
-            </div>
-
-            <div className="form-group">
-              <label>Upload Foto Pendampingan</label>
-              <input className="input-field" type="file" name="fotoPendamping" accept="image/*" onChange={handleFileChange} />
-            </div>
-
-            <div className="btn-container">
-              <button type="button" className="btn-submit btn-back" onClick={() => setStep(1)}>👈 KEMBALI</button>
-              <button type="submit" className="btn-submit" style={{marginTop:0}}>KIRIM DATA ✅</button>
-            </div>
-          </>
-        )}
-
-        {status === 'loading' && (
-          <div style={{marginTop:'20px', padding:'15px', backgroundColor:'#e0f2f1', borderRadius:'8px', color:'#00695c', textAlign:'center'}}>
-            <p style={{margin:0, fontWeight:'bold', fontSize:'16px'}}>🚀 Sedang Mengirim Data...</p>
-            <p style={{margin:'5px 0 0 0', fontSize:'13px'}}>Mohon tunggu sebentar.</p>
+        <div style={{marginBottom:'25px'}}>
+          <div className="step-info">Langkah {step} dari 2</div>
+          <div className="progress-bar-bg">
+            <div className="progress-bar-fill" style={{width: step === 1 ? '50%' : '100%'}}></div>
           </div>
-        )}
-        
-        {status === 'error' && (
-          <p className="status-msg" style={{color:'red', fontWeight:'bold'}}>❌ Gagal mengirim. Cek koneksi internet Anda.</p>
-        )}
-      </form>
-    </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+
+          {step === 1 && (
+            <>
+              <div className="form-group">
+                <label>Pilih Pendamping <span>*</span></label>
+                <Select 
+                  options={optionsMarketing} 
+                  value={formData.marketing} // Load nilai dari state
+                  onChange={(opt) => setFormData({...formData, marketing: opt})} 
+                  placeholder="Cari nama pendamping..."
+                  styles={selectStyles}
+                />
+              </div>
+
+              <div className="section-header">INFORMASI PRIBADI</div>
+
+              <div className="form-group">
+                <label>Pernyataan Pelaku Usaha:</label>
+                <div className="statement-box">
+                  <p>1. Saya selaku pelaku usaha secara sadar dalam memberikan data yang sesuai dan benar, yang nantinya akan digunakan sebagai syarat dalam melakukan pengajuan sertifikasi halal self declare.</p>
+                  <p>2. Saya selaku pelaku usaha secara jujur dan mengakui bahwa bahan bahan yang digunakan dalam produk yang diajukan sertifikat halal self declare adalah bahan bahan yang baik dan halal secara perolehannya.</p>
+                </div>
+                <label className="checkbox-wrapper">
+                  <input type="checkbox" name="persetujuan" checked={formData.persetujuan} onChange={handleChange} />
+                  <span>Saya Setuju dan Paham</span>
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label>Email Aktif <span>*</span></label>
+                <input className="input-field" type="text" name="email" value={formData.email} onChange={handleChange} required placeholder="Ketik 'Tidak Punya' jika kosong" />
+              </div>
+
+              <div className="form-group">
+                <label>Nama Lengkap (Sesuai KTP) <span>*</span></label>
+                <input className="input-field" type="text" name="nama" value={formData.nama} onChange={handleChange} required placeholder="Contoh: Budi Santoso" />
+              </div>
+
+              <div className="form-group">
+                <label>NIK KTP <span>*</span></label>
+                <input className="input-field" type="number" name="nik" value={formData.nik} onChange={handleChange} required placeholder="16 digit angka" />
+              </div>
+
+              <div className="form-group">
+                <label>Upload Foto KTP <span>*</span></label>
+                <input className="input-field" type="file" name="fotoKTP" accept="image/*" onChange={handleFileChange} />
+                <FileIndicator hasData={formData.fotoKTP} />
+              </div>
+
+              <div className="form-group">
+                <label>Alamat Lengkap <span>*</span></label>
+                <textarea className="input-field" name="alamat" rows="3" value={formData.alamat} onChange={handleChange} required placeholder="Jalan, RT/RW, Kelurahan, Kecamatan..."></textarea>
+              </div>
+
+              <div className="form-group">
+                <label>Nomor WhatsApp <span>*</span></label>
+                <input className="input-field" type="number" name="wa" value={formData.wa} onChange={handleChange} required placeholder="08xxxxxxxxxx" />
+              </div>
+
+              <div className="btn-container">
+                <button type="button" className="btn-next" onClick={handleNext}>LANJUT LANGKAH 2 👉</button>
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <div className="section-header">INFORMASI USAHA & PRODUK</div>
+
+              <div className="form-group">
+                <label>Nama Usaha Anda <span>*</span></label>
+                <input className="input-field" type="text" name="namaUsaha" value={formData.namaUsaha} onChange={handleChange} required placeholder="Contoh: Keripik Pisang Berkah" />
+              </div>
+
+              <div className="form-group">
+                <label>Alamat Lokasi Usaha <span>*</span></label>
+                <textarea className="input-field" name="alamatUsaha" rows="3" value={formData.alamatUsaha} onChange={handleChange} required placeholder="Alamat tempat produksi..."></textarea>
+              </div>
+
+              <div className="form-group">
+                <label>Produk Yang Dijual <span>*</span></label>
+                <input className="input-field" type="text" name="produk" value={formData.produk} onChange={handleChange} required placeholder="Contoh: Keripik Pisang Coklat" />
+              </div>
+
+              <div className="form-group">
+                <label>Foto Produk (Bisa Banyak) <span>*</span></label>
+                <input className="input-field" type="file" name="fotoProduk" accept="image/*" multiple onChange={handleFileChange} />
+                <FileIndicator hasData={formData.fotoProduk} />
+                {Array.isArray(formData.fotoProduk) && formData.fotoProduk.length > 0 && (
+                  <small style={{display:'block', marginTop:'2px', color:'#666'}}>
+                    {formData.fotoProduk.length} foto terpilih.
+                  </small>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Bahan & Merek <span>*</span></label>
+                <textarea className="input-field" name="bahan" rows="4" value={formData.bahan} onChange={handleChange} required placeholder="Contoh: &#10;1. Pisang (Pasar)&#10;2. Minyak Goreng (Tropical)&#10;3. Gula (Gulaku)"></textarea>
+              </div>
+
+              <div className="form-group">
+                <label>Alur Proses Pembuatan <span>*</span></label>
+                <textarea className="input-field" name="alur" rows="4" value={formData.alur} onChange={handleChange} required placeholder="Jelaskan singkat dari bahan mentah sampai jadi..."></textarea>
+              </div>
+
+              <div className="form-group">
+                <label>Nomor NIB <span>*</span></label>
+                <input className="input-field" type="text" name="nib" value={formData.nib} required placeholder="Ketik 'Tidak Punya' jika kosong" onChange={handleChange} />
+              </div>
+
+              <div className="form-group">
+                <label>Foto Pendampingan (Opsional)</label>
+                <input className="input-field" type="file" name="fotoPendamping" accept="image/*" onChange={handleFileChange} />
+                <FileIndicator hasData={formData.fotoPendamping} />
+              </div>
+
+              <div className="btn-container">
+                <button type="button" className="btn-submit btn-back" onClick={() => setStep(1)}>👈 KEMBALI</button>
+                <button type="submit" className="btn-submit">KIRIM DATA SEKARANG ✅</button>
+              </div>
+            </>
+          )}
+        </form>
+      </div>
+    </>
   );
 }
 
