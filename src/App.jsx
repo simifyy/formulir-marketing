@@ -6,7 +6,8 @@ import './App.css';
 function App() {
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0sw-adlPYohzgIOmJIygHDyeTI8x7QR9EmdVTniQTT2btlIPdP9AQh0ehMfSKLVHp/exec";
 
-  // --- 1. INISIALISASI STATE DENGAN LOCAL STORAGE ---
+  const UPLOAD_URL = "https://immjakartapusat.org/api/upload.php"; 
+
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem('halalFormStep');
     return savedStep ? parseInt(savedStep) : 1;
@@ -16,29 +17,29 @@ function App() {
 
   const [formData, setFormData] = useState(() => {
     const savedData = localStorage.getItem('halalFormData');
-    return savedData ? JSON.parse(savedData) : {
+    return savedData ? { ...JSON.parse(savedData), fotoKTP: null, fotoProduk: [], fotoPendamping: null } : {
       marketing: null,
       persetujuan: false,
       email: '',
       nama: '',
       nik: '',
-      fotoKTP: '',
+      fotoKTP: null,
       alamat: '',
       wa: '',
       namaUsaha: '',
       alamatUsaha: '',
       produk: '',
-      fotoProduk: [], 
+      fotoProduk: [],
       bahan: '',
       alur: '',
       nib: '',
-      fotoPendamping: ''
+      fotoPendamping: null
     };
   });
 
-  // --- 2. AUTO-SAVE KE LOCAL STORAGE ---
   useEffect(() => {
-    localStorage.setItem('halalFormData', JSON.stringify(formData));
+    const dataToSave = { ...formData, fotoKTP: null, fotoProduk: [], fotoPendamping: null };
+    localStorage.setItem('halalFormData', JSON.stringify(dataToSave));
     localStorage.setItem('halalFormStep', step.toString());
   }, [formData, step]);
 
@@ -50,25 +51,16 @@ function App() {
 
   const selectStyles = {
     control: base => ({ 
-      ...base, 
-      backgroundColor: '#ffffff', 
-      borderColor: '#ccc',
-      padding: '6px', 
-      borderRadius: '6px',
-      fontSize: '16px',
-      boxShadow: 'none',
-      color: '#000',
+      ...base, backgroundColor: '#ffffff', borderColor: '#ccc', padding: '6px', 
+      borderRadius: '6px', fontSize: '16px', boxShadow: 'none', color: '#000',
       '&:hover': { borderColor: '#2e7d32' }
     }),
     singleValue: base => ({ ...base, color: '#000' }), 
     input: base => ({ ...base, color: '#000' }),       
     placeholder: base => ({ ...base, color: '#888' }), 
     option: (base, state) => ({
-      ...base,
-      backgroundColor: state.isSelected ? '#2e7d32' : state.isFocused ? '#e8f5e9' : 'white',
-      color: state.isSelected ? 'white' : '#000',
-      padding: '12px',
-      cursor: 'pointer'
+      ...base, backgroundColor: state.isSelected ? '#2e7d32' : state.isFocused ? '#e8f5e9' : 'white',
+      color: state.isSelected ? 'white' : '#000', padding: '12px', cursor: 'pointer'
     })
   };
 
@@ -76,45 +68,49 @@ function App() {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({ ...formData, [e.target.name]: value });
   };
-
   const handleFileChange = async (e) => {
     const files = e.target.files;
     const name = e.target.name;
     
     if (files && files.length > 0) {
-      const options = {
-        maxSizeMB: 0.1,        
-        maxWidthOrHeight: 800, 
-        useWebWorker: true,
-        initialQuality: 0.7   
-      };
+      // Setting kompresi ringan (Max 1MB) sebelum upload ke hosting
+      const options = { maxSizeMB: 1, maxWidthOrHeight: 1200, useWebWorker: true };
 
       try {
         if (name === 'fotoProduk') {
-          const compressedFilesPromises = Array.from(files).map(async (file) => {
-            const compressed = await imageCompression(file, options);
-            return new Promise((resolve) => {
-              const reader = new FileReader();
-              reader.readAsDataURL(compressed);
-              reader.onloadend = () => resolve(reader.result);
-            });
-          });
-
-          const base64Array = await Promise.all(compressedFilesPromises);
-          setFormData(prev => ({ ...prev, [name]: base64Array })); 
+          // Handle Banyak Foto
+          const compressedFilesPromises = Array.from(files).map(file => imageCompression(file, options));
+          const compressedFiles = await Promise.all(compressedFilesPromises);
+          setFormData(prev => ({ ...prev, [name]: compressedFiles })); 
         } else {
-          const file = files[0];
-          const compressedFile = await imageCompression(file, options);
-          const reader = new FileReader();
-          reader.readAsDataURL(compressedFile);
-          reader.onloadend = () => {
-            setFormData(prev => ({ ...prev, [name]: reader.result }));
-          };
+          // Handle Satu Foto
+          const compressedFile = await imageCompression(files[0], options);
+          setFormData(prev => ({ ...prev, [name]: compressedFile }));
         }
       } catch (error) {
         console.error("Gagal kompresi:", error);
-        alert("Gagal memproses gambar. Coba lagi.");
+        alert("Gagal memproses gambar.");
       }
+    }
+  };
+
+  // --- FUNGSI UPLOAD KE HOSTING PHP ---
+  const uploadToHosting = async (file) => {
+    const formDataUpload = new FormData();
+    formDataUpload.append("file", file);
+
+    try {
+      const response = await fetch(UPLOAD_URL, { method: "POST", body: formDataUpload });
+      const result = await response.json();
+      
+      if (result.status === 'success') {
+        return result.url; // Berhasil! Kembalikan Link Gambar (https://...)
+      } else {
+        throw new Error(result.message || "Gagal upload ke server");
+      }
+    } catch (error) {
+      console.error("Upload Error:", error);
+      return null;
     }
   };
 
@@ -122,42 +118,66 @@ function App() {
     if (!formData.marketing) return alert("⚠️ Mohon pilih Pendamping dulu.");
     if (!formData.persetujuan) return alert("⚠️ Anda harus mencentang persetujuan!");
     
-    if (!formData.nama || !formData.nik || (!formData.fotoKTP && !localStorage.getItem('halalFormData')) || !formData.alamat || !formData.wa || !formData.email) {
-      if (!formData.fotoKTP) return alert("⚠️ Mohon lengkapi semua kolom bertanda bintang (*).");
+    // Validasi Step 1
+    if (!formData.nama || !formData.nik || !formData.alamat || !formData.wa || !formData.email) {
+      return alert("⚠️ Mohon lengkapi semua kolom bertanda bintang (*).");
     }
+    // Cek Foto KTP (Khusus file object)
+    if (!formData.fotoKTP) return alert("⚠️ Mohon upload Foto KTP.");
+    
     setStep(2);
     window.scrollTo(0, 0);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.namaUsaha || !formData.produk || (!formData.fotoProduk || formData.fotoProduk.length === 0) || !formData.bahan || !formData.alur || !formData.nib) {
-      return alert("⚠️ Lengkapi data usaha Anda! (Termasuk NIB, ketik 'Tidak Punya' jika kosong)");
+      return alert("⚠️ Lengkapi data usaha Anda!");
     }
 
     setStatus('loading'); 
 
-    const dataToSend = {
-      marketing: formData.marketing ? formData.marketing.value : '',
-      persetujuan: "SETUJU",
-      email: formData.email,
-      nama: formData.nama,
-      nik: formData.nik,
-      alamat: formData.alamat,
-      wa: formData.wa,
-      fotoKTP: formData.fotoKTP,
-      namaUsaha: formData.namaUsaha,
-      alamatUsaha: formData.alamatUsaha,
-      produk: formData.produk,
-      fotoProduk: formData.fotoProduk,
-      bahan: formData.bahan,
-      alur: formData.alur,
-      nib: formData.nib,
-      fotoPendamping: formData.fotoPendamping
-    };
-
     try {
+      // 1. UPLOAD FOTO KTP
+      const urlKTP = await uploadToHosting(formData.fotoKTP);
+      if (!urlKTP) throw new Error("Gagal upload KTP. Cek koneksi.");
+
+      // 2. UPLOAD FOTO PENDAMPING (Opsional)
+      let urlPendamping = "";
+      if (formData.fotoPendamping) {
+        urlPendamping = await uploadToHosting(formData.fotoPendamping);
+      }
+
+      // 3. UPLOAD FOTO PRODUK (Banyak)
+      // Kita upload satu per satu secara paralel
+      const uploadPromises = formData.fotoProduk.map(file => uploadToHosting(file));
+      const uploadedUrls = await Promise.all(uploadPromises);
+      
+      // Filter jika ada yang gagal, lalu gabung jadi string dipisah enter
+      const validUrls = uploadedUrls.filter(url => url !== null);
+      if (validUrls.length === 0) throw new Error("Gagal upload foto produk.");
+      const urlProdukString = validUrls.join("\n"); 
+
+      // 4. KIRIM DATA LINK KE GOOGLE SHEET
+      const dataToSend = {
+        marketing: formData.marketing ? formData.marketing.value : '',
+        persetujuan: "SETUJU",
+        email: formData.email,
+        nama: formData.nama,
+        nik: formData.nik,
+        alamat: formData.alamat,
+        wa: formData.wa,
+        urlKTP: urlKTP,             // INI SUDAH JADI LINK HTTPS
+        namaUsaha: formData.namaUsaha,
+        alamatUsaha: formData.alamatUsaha,
+        produk: formData.produk,
+        urlProduk: urlProdukString, // INI JUGA LINK HTTPS
+        bahan: formData.bahan,
+        alur: formData.alur,
+        nib: formData.nib,
+        urlPendamping: urlPendamping // INI JUGA LINK HTTPS
+      };
+
       await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dataToSend) });
       
       setStatus('success');
@@ -165,16 +185,20 @@ function App() {
       localStorage.removeItem('halalFormStep');
       
     } catch (error) {
+      console.error(error);
+      alert("Terjadi kesalahan: " + error.message);
       setStatus('error');
     }
   };
 
-  const FileIndicator = ({ hasData }) => {
-    if (!hasData || hasData.length === 0) return null;
+  // Indikator File UI
+  const FileIndicator = ({ fileData, isMultiple }) => {
+    if (!fileData) return null;
+    if (isMultiple && fileData.length === 0) return null;
+
     return (
-      <div style={{marginTop:'5px', fontSize:'13px', color:'#2e7d32', fontWeight:'bold', display:'flex', alignItems:'center', gap:'5px'}}>
-        <span>✅ Foto tersimpan di memori.</span>
-        <span style={{fontSize:'11px', fontWeight:'normal', color:'#666'}}>(Klik 'Pilih File' jika ingin mengubah)</span>
+      <div style={{marginTop:'5px', fontSize:'13px', color:'#2e7d32', fontWeight:'bold'}}>
+        ✅ {isMultiple ? `${fileData.length} foto siap upload` : `File siap: ${fileData.name}`}
       </div>
     );
   };
@@ -185,7 +209,7 @@ function App() {
         <div style={{fontSize: '70px', marginBottom:'20px'}}>🎉</div>
         <h1 style={{fontSize: '32px', marginBottom:'10px'}}>Berhasil Terkirim!</h1>
         <p style={{fontSize: '16px', color:'#666', maxWidth:'400px', lineHeight:'1.6'}}>
-          Terima kasih. Data pendaftaran sertifikasi halal Anda telah kami terima.
+          Terima kasih. Data & Foto telah tersimpan aman di server kami.
         </p>
         <button className="btn-submit" onClick={() => window.location.reload()} style={{marginTop:'40px', width:'auto', paddingLeft:'40px', paddingRight:'40px'}}>
           Isi Formulir Baru
@@ -199,14 +223,14 @@ function App() {
       {status === 'loading' && (
         <div className="loading-overlay">
           <div className="spinner"></div>
-          <p className="loading-title">Sedang Mengirim Data...</p>
-          <p className="loading-text">Mohon jangan tutup halaman ini.</p>
+          <p className="loading-title">Mengupload ke Server...</p>
+          <p className="loading-text">Sedang mengirim foto ke hosting Anda...</p>
         </div>
       )}
 
       <div className="container">
-        <h1>FORMULIR PENDAFTARAN SERTIFIKASI HALAL (SELF DECLARE) </h1>
-        <p className="subtitle">Isi data dengan benar dan jujur.</p>
+        <h1>PENDAFTARAN SERTIFIKASI HALAL</h1>
+        <p className="subtitle">Program Self Declare (Gratis)</p>
 
         <div style={{marginBottom:'25px'}}>
           <div className="step-info">Langkah {step} dari 2</div>
@@ -223,7 +247,7 @@ function App() {
                 <label>Pilih Pendamping <span>*</span></label>
                 <Select 
                   options={optionsMarketing} 
-                  value={formData.marketing} // Load nilai dari state
+                  value={formData.marketing} 
                   onChange={(opt) => setFormData({...formData, marketing: opt})} 
                   placeholder="Cari nama pendamping..."
                   styles={selectStyles}
@@ -235,8 +259,8 @@ function App() {
               <div className="form-group">
                 <label>Pernyataan Pelaku Usaha:</label>
                 <div className="statement-box">
-                  <p>1. Saya selaku pelaku usaha secara sadar dalam memberikan data yang sesuai dan benar, yang nantinya akan digunakan sebagai syarat dalam melakukan pengajuan sertifikasi halal self declare.</p>
-                  <p>2. Saya selaku pelaku usaha secara jujur dan mengakui bahwa bahan bahan yang digunakan dalam produk yang diajukan sertifikat halal self declare adalah bahan bahan yang baik dan halal secara perolehannya.</p>
+                  <p>1. Saya memberikan data yang sesuai dan benar untuk syarat sertifikasi halal self declare.</p>
+                  <p>2. Saya menjamin bahan yang digunakan dalam produk adalah halal.</p>
                 </div>
                 <label className="checkbox-wrapper">
                   <input type="checkbox" name="persetujuan" checked={formData.persetujuan} onChange={handleChange} />
@@ -262,7 +286,7 @@ function App() {
               <div className="form-group">
                 <label>Upload Foto KTP <span>*</span></label>
                 <input className="input-field" type="file" name="fotoKTP" accept="image/*" onChange={handleFileChange} />
-                <FileIndicator hasData={formData.fotoKTP} />
+                <FileIndicator fileData={formData.fotoKTP} isMultiple={false} />
               </div>
 
               <div className="form-group">
@@ -286,7 +310,7 @@ function App() {
               <div className="section-header">INFORMASI USAHA & PRODUK</div>
 
               <div className="form-group">
-                <label>Nama Usaha Anda <span>*</span></label>
+                <label>Nama Usaha <span>*</span></label>
                 <input className="input-field" type="text" name="namaUsaha" value={formData.namaUsaha} onChange={handleChange} required placeholder="Contoh: Keripik Pisang Berkah" />
               </div>
 
@@ -296,19 +320,14 @@ function App() {
               </div>
 
               <div className="form-group">
-                <label>Produk Yang Dijual <span>*</span></label>
+                <label>Nama Produk <span>*</span></label>
                 <input className="input-field" type="text" name="produk" value={formData.produk} onChange={handleChange} required placeholder="Contoh: Keripik Pisang Coklat" />
               </div>
 
               <div className="form-group">
                 <label>Foto Produk (Bisa Banyak) <span>*</span></label>
                 <input className="input-field" type="file" name="fotoProduk" accept="image/*" multiple onChange={handleFileChange} />
-                <FileIndicator hasData={formData.fotoProduk} />
-                {Array.isArray(formData.fotoProduk) && formData.fotoProduk.length > 0 && (
-                  <small style={{display:'block', marginTop:'2px', color:'#666'}}>
-                    {formData.fotoProduk.length} foto terpilih.
-                  </small>
-                )}
+                <FileIndicator fileData={formData.fotoProduk} isMultiple={true} />
               </div>
 
               <div className="form-group">
@@ -329,7 +348,7 @@ function App() {
               <div className="form-group">
                 <label>Foto Pendampingan (Opsional)</label>
                 <input className="input-field" type="file" name="fotoPendamping" accept="image/*" onChange={handleFileChange} />
-                <FileIndicator hasData={formData.fotoPendamping} />
+                <FileIndicator fileData={formData.fotoPendamping} isMultiple={false} />
               </div>
 
               <div className="btn-container">
