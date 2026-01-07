@@ -287,7 +287,7 @@ function App() {
       {status === 'loading' && <div className="loading-overlay"><div className="spinner"></div><p>Mengirim Data...</p></div>}
 
       <div className="container">
-        <h1>FORMULIR PENDAFTARAN HALAL</h1>
+        <h1>FORMULIR PENDAFTARAN SERTIFIKASI HALAL (SELF DECLARE)</h1>
         
         <form onSubmit={handleSubmit}>
           {step === 1 && (
@@ -303,8 +303,8 @@ function App() {
               <div className="form-group" style={{background:'#fdf6e3', padding:'15px', borderRadius:'8px', border:'1px solid #f39c12', marginBottom:'20px'}}>
                 <label style={{fontWeight:'bold', color:'#d35400'}}>Pernyataan Pelaku Usaha:</label>
                 <div style={{fontSize:'14px', lineHeight:'1.5', color:'#444', margin:'10px 0'}}>
-                  <p>1. Saya memberikan data yang sesuai dan benar untuk syarat sertifikasi halal self declare.</p>
-                  <p style={{marginTop:'5px'}}>2. Saya menjamin bahan yang digunakan dalam produk adalah halal.</p>
+                  <p>1. Saya selaku pelaku usaha secara sadar dalam memberikan data yang sesuai dan benar, yang nantinya akan digunakan sebagai syarat dalam melakukan pengajuan sertifikassi halal self declare.</p>
+                  <p style={{marginTop:'5px'}}>2. Saya selaku pelaku usaha secara jujur dan mengakui bahwa bahan-bahan yang digunakan dalam produk yang diajukan sertifikasi halal self declare adalah bahan-bahan yang baik dan halal secara perolehan.</p>
                 </div>
                 <label className="checkbox-wrapper">
                   <input type="checkbox" name="persetujuan" checked={formData.persetujuan} onChange={handleChange} />
