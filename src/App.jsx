@@ -103,10 +103,12 @@ function App() {
   });
 
   const [status, setStatus] = useState('');
-
+  
+  // State Error Modal
   const [errorMessage, setErrorMessage] = useState('');
   const [showError, setShowError] = useState(false);
 
+  // --- STATE UNTUK ALAMAT OTOMATIS ---
   const [provinces, setProvinces] = useState([]);
   const [regencies, setRegencies] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -259,8 +261,12 @@ function App() {
     if (!formData.marketing) return showErrorModal("⚠️ Pilih Pendamping dulu.");
     if (!formData.persetujuan) return showErrorModal("⚠️ Anda harus mencentang persetujuan!");
     if (!formData.nama) return showErrorModal("⚠️ Isi Nama Lengkap.");
+    
+    // VALIDASI NIK 16 DIGIT
     if (!formData.nik || formData.nik.toString().length !== 16) return showErrorModal("⚠️ NIK harus tepat 16 digit.");
     if (!formData.fotoKTP) return showErrorModal("⚠️ Wajib Upload Foto KTP.");
+    
+    // VALIDASI WA MINIMAL 10 DIGIT
     if (!formData.wa || formData.wa.toString().length < 10) return showErrorModal("⚠️ Nomor WA minimal 10 digit.");
 
     setStep(2);
@@ -364,8 +370,8 @@ function App() {
               <div className="form-group" style={{background:'#fdf6e3', padding:'15px', borderRadius:'8px', border:'1px solid #f39c12', marginBottom:'20px'}}>
                 <label style={{fontWeight:'bold', color:'#d35400'}}>Pernyataan Pelaku Usaha:</label>
                 <div style={{fontSize:'14px', lineHeight:'1.5', color:'#444', margin:'10px 0'}}>
-                  <p>1. Saya selaku pelaku usaha secara sadar dalam memberikan data yang sesuai dan benar, yang nantinya akan digunakan sebagai syarat dalam melakukan pengajuan sertifikassi halal self declare.</p>
-                  <p style={{marginTop:'5px'}}>2. Saya selaku pelaku usaha secara jujur dan mengakui bahwa bahan-bahan yang digunakan dalam produk yang diajukan sertifikasi halal self declare adalah bahan-bahan yang baik dan halal secara perolehan.</p>
+                  <p>1. Saya selaku pelaku usaha secara sadar dalam memberikan data yang sesuai dan benar.</p>
+                  <p style={{marginTop:'5px'}}>2. Saya selaku pelaku usaha secara jujur dan mengakui bahwa bahan-bahan yang digunakan adalah halal.</p>
                 </div>
                 <label className="checkbox-wrapper">
                   <input type="checkbox" name="persetujuan" checked={formData.persetujuan} onChange={handleChange} />
@@ -430,7 +436,7 @@ function App() {
                       {item.urlProduk && <small style={{color:'green'}}>✅ Uploaded</small>}
                     </div>
                     <div style={{flex:1}}>
-                      <label style={{fontSize:'12px', fontWeight:'bold'}}>Foto Verval</label>
+                      <label style={{fontSize:'12px', fontWeight:'bold'}}>Foto Pendamping</label>
                       <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, index, 'pendamping')} />
                       {item.urlPendamping && <small style={{color:'green'}}>✅ Uploaded</small>}
                     </div>
