@@ -53,7 +53,7 @@ const RAW_MARKETING_LIST = [
   "MUHAMMAD ROHMATULLOH", "MUHAMMAD SYUHARI", "MUHAMMAD WAHYU BAYHAQI", "MUHAMMAD YASAK", "MUKHAMAD AINUR ROFIK",
   "MUKHAMMAD AGUNG HARIANTO", "MURNI SETYOWATI", "MUUHAMAD MUSTOPA", "NAHDA AULIA MUSTOPA", "NAJUA SYARIFADILAH",
   "NANANG ABDULLAH", "NANANG DHARMANSYAH", "NARSITO", "NAYLA NAZWA AQUELA", "NAZHIDAN ANNAR HUFIAN",
-  "NELY AMALIA", "NETTY RIANTINI", "NIA RISA DEWI", "NINING ANI RETNOWATI",
+  "NELY AMALIA", "NETTY RIANTINI", "NI'MATUL ISNAINI", "NIA RISA DEWI", "NINING ANI RETNOWATI",
   "NONO DARSONO", "NOOR MUHAMAD G BUSTOMI", "NORMA PUSPITA", "NOVI SINTIASARI", "NOVILIA ROIISATULUMMAH",
   "NOVITA SULISTIANI", "NUR AINI", "NUR ASIAH", "NUR JANNA HARAHAP", "NUR KHAIRIYAH ANITA NASUTION",
   "NUR LAILA PURWANINGSIH", "NURDIN", "NURHASANUDIN", "NURUL FAUZIAH", "OKTALIA",
@@ -73,7 +73,7 @@ const RAW_MARKETING_LIST = [
   "SRI NINGSIH S. PD.I", "SRI PUJIANTORO", "SRI RAHAYU", "SRI SUPARWATI,. SE", "SRI WIDAYANTI",
   "SUDI HILMAWAN", "SUDIRMAN, CH", "SUHADI", "SUHARTININGSIH", "SUHENDANG",
   "SUKANDI", "SULASTRI", "SUMARTINI TRI NURCAHYANI", "SUPARMAN", "SUPRIYADI",
-  "SUPRIYANTO", "SUPRIYANTO (DUPLIKAT)", "SURYANAH", "SURYAWATI",
+  "SUPRIYANTO", "SUPRIYANTO (DUPLIKAT)", "SURACHMAN", "SURYANAH", "SURYAWATI",
   "SUSI YULIYANTI", "SUSILAWATI", "SUSILAWATI (DUPLIKAT)", "SUTEJO", "SUTIAH",
   "SUTRIAWATI", "SUWITO", "SUWOTO", "SUYANTO", "SYAIFUL AMRI",
   "SYAMSUL HIDAYAH", "SYARIF MUHAMMAD", "SYARIFAH SOFIYAH AL", "SYIFA FATIROH", "SYIFA NURFADHILLAH",
@@ -84,7 +84,7 @@ const RAW_MARKETING_LIST = [
   "YAYAN SOPYAN", "YEK IMAM", "YENI GANTINI", "YOGI BINTORO", "YOKO DWI PURNOMO",
   "YUDI PRASETYO BUDHI", "YUDI TRI SOLEH HUDIN", "YULIA PUTRI ALISHA", "YUNI RISWANTI", "YUSUP MAULANA",
   "YUSUP RACHMAN", "YUYUN MUSTAFA", "YUYUN YUNANI", "ZAENAL BAGUS WIBISONO", "ZAENAL MUTAQIN",
-  "ZAINUL ARIFIN", "ZAKIATUS SOLIKAH", "ZAKIYAH", "ZULKARNAIN", "NI'MATUL ISNAINI", "SURACHMAN"
+  "ZAINUL ARIFIN", "ZAKIATUS SOLIKAH", "ZAKIYAH", "ZULKARNAIN"
 ];
 
 const MARKETING_LIST = RAW_MARKETING_LIST.map((name, index) => ({
@@ -94,28 +94,25 @@ const MARKETING_LIST = RAW_MARKETING_LIST.map((name, index) => ({
 }));
 
 function App() {
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzhK-9ci-EA9xkjpc0hbDsGzYJBjmjNHbPaQa29aEpjp2SQWayWJxlSpDB7f0X7Xpae/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2nSC6vF6Osbf0KdKIMrFEPvN6eBbdD1hT-bOv36GQof6lo1wlWXK_0srQHXbQ1_aw/exec";
   const UPLOAD_URL = "https://ayohalal2026.id/api/upload.php"; 
 
   const [step, setStep] = useState(() => {
-    const savedStep = localStorage.getItem('halalFormStep_vFinal3');
+    const savedStep = localStorage.getItem('halalFormStep_vFinal5'); 
     return savedStep ? parseInt(savedStep) : 1;
   });
 
   const [status, setStatus] = useState('');
-  
-  // State Error Modal
   const [errorMessage, setErrorMessage] = useState('');
   const [showError, setShowError] = useState(false);
 
-  // --- STATE UNTUK ALAMAT OTOMATIS ---
   const [provinces, setProvinces] = useState([]);
   const [regencies, setRegencies] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [villages, setVillages] = useState([]);
 
   const [formData, setFormData] = useState(() => {
-    const savedData = localStorage.getItem('halalFormData_vFinal3');
+    const savedData = localStorage.getItem('halalFormData_vFinal5');
     return savedData ? JSON.parse(savedData) : {
       marketing: null,
       persetujuan: false,
@@ -125,17 +122,16 @@ function App() {
       wa: '',
       namaUsaha: '',
       alamatDetail: { provinsi: null, kota: null, kecamatan: null, kelurahan: null, rtrw: '', kodepos: '' },
-      produkList: [{ nama: '', fotoProduk: null, urlProduk: '', fotoPendamping: null, urlPendamping: '' }],
+      produkList: [{ nama: '', fotoProduk: null, urlProduk: '', videoProduk: null, urlVideo: '', fotoPendamping: null, urlPendamping: '' }],
       bahan: '',
       alur: '',
       statusNIB: 'tidak_punya', 
-      nibDetail: { nomor: '', email: '', password: '' },
+      nibDetail: { nomor: '', email: '', password: '', fileSS: null },
       statusSihalal: 'belum_punya',
       sihalalDetail: { email: '', password: '' }
     };
   });
 
-  // --- API WILAYAH ---
   useEffect(() => {
     fetch('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json')
       .then(res => res.json())
@@ -170,10 +166,11 @@ function App() {
     const dataToSave = { 
       ...formData, 
       fotoKTP: null, 
-      produkList: (formData.produkList || []).map(p => ({...p, fotoProduk: null, fotoPendamping: null})) 
+      nibDetail: { ...formData.nibDetail, fileSS: null },
+      produkList: (formData.produkList || []).map(p => ({...p, fotoProduk: null, videoProduk: null, fotoPendamping: null})) 
     };
-    localStorage.setItem('halalFormData_vFinal3', JSON.stringify(dataToSave));
-    localStorage.setItem('halalFormStep_vFinal3', step.toString());
+    localStorage.setItem('halalFormData_vFinal5', JSON.stringify(dataToSave));
+    localStorage.setItem('halalFormStep_vFinal5', step.toString());
   }, [formData, step]);
 
   const selectStyles = {
@@ -207,7 +204,10 @@ function App() {
 
   const addProduk = () => {
     if (formData.produkList.length < 7) {
-      setFormData({ ...formData, produkList: [...formData.produkList, { nama: '', fotoProduk: null, urlProduk: '', fotoPendamping: null, urlPendamping: '' }] });
+      setFormData({ 
+        ...formData, 
+        produkList: [...formData.produkList, { nama: '', fotoProduk: null, urlProduk: '', videoProduk: null, urlVideo: '', fotoPendamping: null, urlPendamping: '' }] 
+      });
     } else {
       showErrorModal("Maksimal 7 Produk.");
     }
@@ -219,37 +219,74 @@ function App() {
     setFormData({ ...formData, produkList: newList });
   };
 
-  const uploadToHosting = async (file) => {
+  const uploadToHosting = async (file, jenisGambar) => {
     const formDataUpload = new FormData();
     formDataUpload.append("file", file);
+    
+    const mktName = formData.marketing ? formData.marketing.value : "Belum Dipilih";
+    formDataUpload.append("marketing", mktName);
+    const plkName = formData.nama ? formData.nama : "Tanpa Nama";
+    formDataUpload.append("nama", plkName);
+    formDataUpload.append("jenis", jenisGambar);
+
     try {
       const response = await fetch(UPLOAD_URL, { method: "POST", body: formDataUpload });
       const result = await response.json();
       if (result.status === 'success') return result.url;
       else throw new Error(result.message);
-    } catch (error) { return null; }
+    } catch (error) {
+      console.error("Upload Error:", error);
+      return null;
+    }
   };
 
   const handleFileChange = async (e, index = null, type = null) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (type === 'produkVideo') {
+        if (file.size > 50 * 1024 * 1024) return showErrorModal("Video terlalu besar! Maksimal 50MB.");
+        
+        const newList = [...formData.produkList];
+        newList[index]['videoProduk'] = file;
+        setFormData({ ...formData, produkList: newList });
+
+        const url = await uploadToHosting(file, "VIDEO_PRODUK");
+        if (url) {
+            newList[index]['urlVideo'] = url;
+            setFormData({ ...formData, produkList: newList });
+        } else {
+            showErrorModal("Gagal upload video. Coba lagi.");
+        }
+        return; 
+    }
+
     const options = { maxSizeMB: 1, maxWidthOrHeight: 1200, useWebWorker: true };
     try {
       const compressedFile = await imageCompression(file, options);
-      if (e.target.name === 'fotoKTP') setFormData(prev => ({ ...prev, fotoKTP: compressedFile }));
+      
+      if (e.target.name === 'fotoKTP') {
+        setFormData(prev => ({ ...prev, fotoKTP: compressedFile }));
+      } 
+      else if (type === 'nibSS') {
+        setFormData(prev => ({ ...prev, nibDetail: { ...prev.nibDetail, fileSS: compressedFile } }));
+      }
       else if (index !== null) {
         const fieldName = type === 'produk' ? 'fotoProduk' : 'fotoPendamping';
+        const jenisLabel = type === 'produk' ? 'FOTO_PRODUK' : 'FOTO_PENDAMPING';
+
         const newList = [...formData.produkList];
         newList[index][fieldName] = compressedFile;
         setFormData({ ...formData, produkList: newList });
-        const url = await uploadToHosting(compressedFile);
+
+        const url = await uploadToHosting(compressedFile, jenisLabel);
         if (url) {
            const urlField = type === 'produk' ? 'urlProduk' : 'urlPendamping';
            newList[index][urlField] = url;
            setFormData({ ...formData, produkList: newList });
         }
       }
-    } catch (error) { showErrorModal("Gagal memproses gambar."); }
+    } catch (error) { showErrorModal("Gagal memproses file."); }
   };
 
   const showErrorModal = (msg) => {
@@ -261,12 +298,8 @@ function App() {
     if (!formData.marketing) return showErrorModal("⚠️ Pilih Pendamping dulu.");
     if (!formData.persetujuan) return showErrorModal("⚠️ Anda harus mencentang persetujuan!");
     if (!formData.nama) return showErrorModal("⚠️ Isi Nama Lengkap.");
-    
-    // VALIDASI NIK 16 DIGIT
     if (!formData.nik || formData.nik.toString().length !== 16) return showErrorModal("⚠️ NIK harus tepat 16 digit.");
     if (!formData.fotoKTP) return showErrorModal("⚠️ Wajib Upload Foto KTP.");
-    
-    // VALIDASI WA MINIMAL 10 DIGIT
     if (!formData.wa || formData.wa.toString().length < 10) return showErrorModal("⚠️ Nomor WA minimal 10 digit.");
 
     setStep(2);
@@ -282,6 +315,7 @@ function App() {
 
     if (formData.statusNIB === 'punya') {
       if(!formData.nibDetail?.nomor || !formData.nibDetail?.email || !formData.nibDetail?.password) return showErrorModal("Lengkapi Data NIB");
+      if(!formData.nibDetail?.fileSS) return showErrorModal("Wajib upload SS Akun NIB");
     }
     
     if (formData.statusSihalal === 'sudah_punya') {
@@ -290,8 +324,14 @@ function App() {
 
     setStatus('loading'); 
 
-    const urlKTP = await uploadToHosting(formData.fotoKTP);
+    const urlKTP = await uploadToHosting(formData.fotoKTP, "FOTO_KTP");
     if (!urlKTP) { setStatus(''); return showErrorModal("Gagal Upload KTP"); }
+
+    let urlNibSS = '';
+    if (formData.statusNIB === 'punya' && formData.nibDetail?.fileSS) {
+        urlNibSS = await uploadToHosting(formData.nibDetail.fileSS, "SS_NIB");
+        if (!urlNibSS) { setStatus(''); return showErrorModal("Gagal Upload SS NIB"); }
+    }
 
     const dataToSend = {
       marketing: formData.marketing.value,
@@ -314,7 +354,11 @@ function App() {
       bahan: formData.bahan,
       alur: formData.alur,
       statusNIB: formData.statusNIB,
-      nibDetail: formData.nibDetail,
+      nibDetail: {
+          ...formData.nibDetail,
+          urlSS: urlNibSS,
+          fileSS: null
+      },
       statusSihalal: formData.statusSihalal,
       sihalalDetail: formData.sihalalDetail
     };
@@ -322,8 +366,8 @@ function App() {
     try {
       await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dataToSend) });
       setStatus('success');
-      localStorage.removeItem('halalFormData_vFinal3');
-      localStorage.removeItem('halalFormStep_vFinal3');
+      localStorage.removeItem('halalFormData_vFinal5');
+      localStorage.removeItem('halalFormStep_vFinal5');
     } catch (error) {
       console.error(error);
       setStatus('error');
@@ -336,7 +380,6 @@ function App() {
     <>
       {status === 'loading' && <div className="loading-overlay"><div className="spinner"></div><p>Mengirim Data...</p></div>}
 
-      {/* MODAL ERROR CUSTOM */}
       {showError && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -424,22 +467,41 @@ function App() {
                 </div>
               </div>
 
-              <div className="section-header">PRODUK & FOTO (Max 7)</div>
+              <div className="section-header">PRODUK, FOTO & VIDEO (Max 7)</div>
               {(formData.produkList || []).map((item, index) => (
                 <div key={index} style={{border:'1px solid #ddd', padding:'15px', borderRadius:'8px', marginBottom:'15px', backgroundColor:'#fff'}}>
                   <label>Nama Produk {index+1} *</label>
                   <input className="input-field" type="text" value={item.nama} onChange={(e) => handleProdukChange(index, 'nama', e.target.value)} placeholder="Contoh: Keripik Pisang" />
-                  <div style={{display:'flex', gap:'10px', marginTop:'10px'}}>
-                    <div style={{flex:1}}>
-                      <label style={{fontSize:'12px', fontWeight:'bold'}}>Foto Produk</label>
-                      <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, index, 'produk')} />
-                      {item.urlProduk && <small style={{color:'green'}}>✅ Uploaded</small>}
+                  
+                  {/* GRID CONTAINER UNTUK 3 KOLOM RESPONSIVE */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', // Otomatis menyesuaikan, minimal lebar 200px
+                    gap: '15px',
+                    marginTop: '15px'
+                  }}>
+                    
+                    {/* FOTO PRODUK */}
+                    <div>
+                      <label style={{fontSize:'12px', fontWeight:'bold', display:'block'}}>Foto Produk</label>
+                      <input type="file" accept="image/*" style={{width: '100%', boxSizing: 'border-box'}} onChange={(e) => handleFileChange(e, index, 'produk')} />
+                      {item.urlProduk && <small style={{color:'green', display:'block'}}>✅ Uploaded</small>}
                     </div>
-                    <div style={{flex:1}}>
-                      <label style={{fontSize:'12px', fontWeight:'bold'}}>Foto Verval</label>
-                      <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, index, 'pendamping')} />
-                      {item.urlPendamping && <small style={{color:'green'}}>✅ Uploaded</small>}
+
+                    {/* VIDEO PRODUK */}
+                    <div>
+                      <label style={{fontSize:'12px', fontWeight:'bold', display:'block'}}>Video Produk</label>
+                      <input type="file" accept="video/*" style={{width: '100%', boxSizing: 'border-box'}} onChange={(e) => handleFileChange(e, index, 'produkVideo')} />
+                      {item.urlVideo && <small style={{color:'green', display:'block'}}>✅ Uploaded</small>}
                     </div>
+
+                    {/* FOTO VERVAL */}
+                    <div>
+                      <label style={{fontSize:'12px', fontWeight:'bold', display:'block'}}>Foto Verval</label>
+                      <input type="file" accept="image/*" style={{width: '100%', boxSizing: 'border-box'}} onChange={(e) => handleFileChange(e, index, 'pendamping')} />
+                      {item.urlPendamping && <small style={{color:'green', display:'block'}}>✅ Uploaded</small>}
+                    </div>
+
                   </div>
                 </div>
               ))}
@@ -459,8 +521,13 @@ function App() {
                 {formData.statusNIB === 'punya' && (
                   <div style={{paddingLeft:'10px', borderLeft:'3px solid #27ae60'}}>
                     <input className="input-field" placeholder="Nomor NIB" name="nomor" value={formData.nibDetail?.nomor || ''} onChange={handleNIBChange} style={{marginBottom:'5px'}} />
-                    <input className="input-field" placeholder="Email OSS" name="email" value={formData.nibDetail?.email || ''} onChange={handleNIBChange} style={{marginBottom:'5px'}} />
-                    <input className="input-field" placeholder="Password OSS" name="password" value={formData.nibDetail?.password || ''} onChange={handleNIBChange} />
+                    <input className="input-field" placeholder="Akun NIB" name="email" value={formData.nibDetail?.email || ''} onChange={handleNIBChange} style={{marginBottom:'5px'}} />
+                    <input className="input-field" placeholder="Password NIB" name="password" value={formData.nibDetail?.password || ''} onChange={handleNIBChange} style={{marginBottom:'5px'}} />
+                    
+                    {/* INPUT FILE SS NIB BARU */}
+                    <label style={{fontSize:'12px', fontWeight:'bold', marginTop:'5px', display:'block'}}>Foto Tangkapan Layar (SS) Akun NIB</label>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, null, 'nibSS')} />
+                    {formData.nibDetail?.fileSS && <small style={{color:'green'}}>✅ Siap Upload</small>}
                   </div>
                 )}
               </div>
