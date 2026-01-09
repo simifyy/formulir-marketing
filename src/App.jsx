@@ -436,7 +436,7 @@ function App() {
                       {item.urlProduk && <small style={{color:'green'}}>✅ Uploaded</small>}
                     </div>
                     <div style={{flex:1}}>
-                      <label style={{fontSize:'12px', fontWeight:'bold'}}>Foto Pendamping</label>
+                      <label style={{fontSize:'12px', fontWeight:'bold'}}>Foto Verval</label>
                       <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, index, 'pendamping')} />
                       {item.urlPendamping && <small style={{color:'green'}}>✅ Uploaded</small>}
                     </div>
